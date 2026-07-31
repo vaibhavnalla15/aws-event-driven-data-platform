@@ -234,21 +234,26 @@ def lambda_handler(event, context):
                 f"Row {item['row']} Errors: {', '.join(item['errors'])}"
             )
 
-        message = {
-        "bucket_name": bucket_name,
-        "object_key": object_key,
-        "total_records": total_records,
-        "invalid_rows": len(invalid_rows)
-        }    
+        if len(invalid_rows) == 0:
+            message = {
+            "bucket_name": bucket_name,
+            "object_key": object_key,
+            "total_records": total_records,
+            "invalid_rows": len(invalid_rows)
+            }    
 
-        response = sqs.send_message(
-            QueueUrl=QUEUE_URL,
-            MessageBody=json.dumps(message)
-        )
+            response = sqs.send_message(
+                QueueUrl=QUEUE_URL,
+                MessageBody=json.dumps(message)
+            )
 
-        print("Metadata successfully sent to SQS.")
-        print(f"Message ID: {response['MessageId']}")
+            print("Metadata successfully sent to SQS.")
+            print(f"Message ID: {response['MessageId']}")
 
+        else:
+            print("Validation failed.")
+            print("File will NOT be sent to SQS.")
+        
         return {
             "statusCode": 200,
             "body": json.dumps({
