@@ -7,6 +7,9 @@ import io
 
 # AWS Clients
 s3 = boto3.client("s3")
+sqs = boto3.client("sqs")
+
+QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/321869098112/enterprise-processing-queue"
 
 # ==========================================================
 # Required Columns
@@ -156,6 +159,8 @@ def lambda_handler(event, context):
 
         invalid_rows = []
 
+        seen_customer_ids = set()
+
         for row_number, row in enumerate(rows[1:], start=2):
 
             # Skip completely empty rows
@@ -190,6 +195,23 @@ def lambda_handler(event, context):
                     row_errors.append("Invalid Email Format")
 
             # ----------------------------------------------
+            # Duplicate Customer ID Validation
+            # ----------------------------------------------
+
+            customer_id_index = required_column_indexes["Customer ID"]
+
+            if customer_id_index < len(row):
+
+                customer_id = row[customer_id_index].strip()
+
+                if customer_id:
+
+                    if customer_id in seen_customer_ids:
+                        row_errors.append("Duplicate Customer ID")
+                    else:
+                        seen_customer_ids.add(customer_id)        
+
+            # ----------------------------------------------
             # Save Validation Errors
             # ----------------------------------------------
 
@@ -211,6 +233,21 @@ def lambda_handler(event, context):
             print(
                 f"Row {item['row']} Errors: {', '.join(item['errors'])}"
             )
+
+        message = {
+        "bucket_name": bucket_name,
+        "object_key": object_key,
+        "total_records": total_records,
+        "invalid_rows": len(invalid_rows)
+        }    
+
+        response = sqs.send_message(
+            QueueUrl=QUEUE_URL,
+            MessageBody=json.dumps(message)
+        )
+
+        print("Metadata successfully sent to SQS.")
+        print(f"Message ID: {response['MessageId']}")
 
         return {
             "statusCode": 200,
