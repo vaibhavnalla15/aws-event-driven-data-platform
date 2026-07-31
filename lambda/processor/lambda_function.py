@@ -82,6 +82,16 @@ def lambda_handler(event, context):
 
         print("Processing metadata stored in DynamoDB.")
 
+        print("Starting customer record processing...")
+
+        for index, customer in enumerate(rows, start=1):
+
+            print(f"Processing Customer {index}")
+
+            print(json.dumps(customer, indent=2))
+
+        print("Customer record processing completed.")
+
     return {
         "statusCode": 200,
         "body": json.dumps({
