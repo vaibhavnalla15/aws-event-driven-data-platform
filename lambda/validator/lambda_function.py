@@ -8,9 +8,10 @@ import io
 # AWS Clients
 s3 = boto3.client("s3")
 sqs = boto3.client("sqs")
+sns = boto3.client("sns")
 
 QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/321869098112/enterprise-processing-queue"
-
+TOPIC_ARN = "arn:aws:sns:us-east-1:321869098112:enterprise-processing-notifications"
 # ==========================================================
 # Required Columns
 # ==========================================================
@@ -253,6 +254,28 @@ def lambda_handler(event, context):
         else:
             print("Validation failed.")
             print("File will NOT be sent to SQS.")
+
+            message = f"""
+        CSV Validation Failed
+
+        Bucket Name: {bucket_name}
+        Object Key: {object_key}
+
+        Total Records: {total_records}
+        Invalid Rows: {len(invalid_rows)}
+
+        Validation Errors:
+
+        {json.dumps(invalid_rows, indent=2)}
+        """
+
+            sns.publish(
+                TopicArn=TOPIC_ARN,
+                Subject="CSV Validation Failed",
+                Message=message
+            )
+
+            print("SNS notification sent successfully.")
         
         return {
             "statusCode": 200,
