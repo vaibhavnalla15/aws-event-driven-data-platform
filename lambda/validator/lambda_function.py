@@ -276,6 +276,26 @@ def lambda_handler(event, context):
             )
 
             print("SNS notification sent successfully.")
+
+            failed_key = object_key.replace("incoming/", "failed/", 1)
+
+            s3.copy_object(
+                Bucket=bucket_name,
+                CopySource={
+                    "Bucket": bucket_name,
+                    "Key": object_key
+                },
+                Key=failed_key
+            )
+
+            print(f"File copied to: {failed_key}")
+
+            s3.delete_object(
+                Bucket=bucket_name,
+                Key=object_key
+            )
+
+            print("Original file deleted from incoming/")
         
         return {
             "statusCode": 200,
