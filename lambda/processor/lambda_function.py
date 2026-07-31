@@ -12,20 +12,21 @@ dynamodb = boto3.resource("dynamodb")
 
 table = dynamodb.Table("enterprise-processing-metadata")
 
+
 def lambda_handler(event, context):
 
     print("========== SQS EVENT RECEIVED ==========")
     print(json.dumps(event, indent=2))
 
     # --------------------------------------------------
-    # Process each SQS message
+    # Process each SQS Message
     # --------------------------------------------------
 
     for record in event["Records"]:
 
-        # ----------------------------------------------
+        # --------------------------------------------------
         # Read SQS Message
-        # ----------------------------------------------
+        # --------------------------------------------------
 
         message = json.loads(record["body"])
 
@@ -39,9 +40,9 @@ def lambda_handler(event, context):
         print(f"Total Records : {total_records}")
         print(f"Invalid Rows  : {invalid_rows}")
 
-        # ----------------------------------------------
+        # --------------------------------------------------
         # Download CSV from S3
-        # ----------------------------------------------
+        # --------------------------------------------------
 
         response = s3.get_object(
             Bucket=bucket_name,
@@ -52,9 +53,9 @@ def lambda_handler(event, context):
 
         print("CSV downloaded successfully.")
 
-        # ----------------------------------------------
+        # --------------------------------------------------
         # Transform CSV into Customer Objects
-        # ----------------------------------------------
+        # --------------------------------------------------
 
         csv_reader = csv.DictReader(io.StringIO(content))
         rows = list(csv_reader)
@@ -67,9 +68,9 @@ def lambda_handler(event, context):
         else:
             print("No customer records found.")
 
-        # ----------------------------------------------
+        # --------------------------------------------------
         # Store Processing Metadata
-        # ----------------------------------------------
+        # --------------------------------------------------
 
         table.put_item(
             Item={
@@ -82,6 +83,10 @@ def lambda_handler(event, context):
 
         print("Processing metadata stored in DynamoDB.")
 
+        # --------------------------------------------------
+        # Process Customer Records
+        # --------------------------------------------------
+
         print("Starting customer record processing...")
 
         for index, customer in enumerate(rows, start=1):
@@ -91,6 +96,49 @@ def lambda_handler(event, context):
             print(json.dumps(customer, indent=2))
 
         print("Customer record processing completed.")
+
+        # --------------------------------------------------
+        # Update Processing Status
+        # --------------------------------------------------
+
+        table.update_item(
+            Key={
+                "file_id": object_key
+            },
+            UpdateExpression="SET #status = :status",
+            ExpressionAttributeNames={
+                "#status": "status"
+            },
+            ExpressionAttributeValues={
+                ":status": "COMPLETED"
+            }
+        )
+
+        print("Processing status updated to COMPLETED.")
+
+        # --------------------------------------------------
+        # Move File to Processed Folder
+        # --------------------------------------------------
+
+        processed_key = object_key.replace("incoming/", "processed/", 1)
+
+        s3.copy_object(
+            Bucket=bucket_name,
+            CopySource={
+                "Bucket": bucket_name,
+                "Key": object_key
+            },
+            Key=processed_key
+        )
+
+        print(f"File copied to: {processed_key}")
+
+        s3.delete_object(
+            Bucket=bucket_name,
+            Key=object_key
+        )
+
+        print("Original file deleted from incoming/")
 
     return {
         "statusCode": 200,
