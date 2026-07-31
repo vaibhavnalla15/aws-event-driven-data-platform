@@ -3,20 +3,46 @@ import csv
 import io
 import json
 
+# ==========================================================
+# AWS Clients
+# ==========================================================
+
 s3 = boto3.client("s3")
+dynamodb = boto3.resource("dynamodb")
+
+table = dynamodb.Table("enterprise-processing-metadata")
 
 def lambda_handler(event, context):
 
     print("========== SQS EVENT RECEIVED ==========")
     print(json.dumps(event, indent=2))
 
+    # --------------------------------------------------
+    # Process each SQS message
+    # --------------------------------------------------
+
     for record in event["Records"]:
+
+        # ----------------------------------------------
+        # Read SQS Message
+        # ----------------------------------------------
 
         message = json.loads(record["body"])
 
         bucket_name = message["bucket_name"]
         object_key = message["object_key"]
-        
+        total_records = message["total_records"]
+        invalid_rows = message["invalid_rows"]
+
+        print(f"Bucket Name   : {bucket_name}")
+        print(f"Object Key    : {object_key}")
+        print(f"Total Records : {total_records}")
+        print(f"Invalid Rows  : {invalid_rows}")
+
+        # ----------------------------------------------
+        # Download CSV from S3
+        # ----------------------------------------------
+
         response = s3.get_object(
             Bucket=bucket_name,
             Key=object_key
@@ -24,26 +50,41 @@ def lambda_handler(event, context):
 
         content = response["Body"].read().decode("utf-8")
 
+        print("CSV downloaded successfully.")
+
+        # ----------------------------------------------
+        # Transform CSV into Customer Objects
+        # ----------------------------------------------
+
         csv_reader = csv.DictReader(io.StringIO(content))
         rows = list(csv_reader)
 
-        print("CSV downloaded successfully.")
-        
-        print(f"Total Records: {len(rows)}")
+        print(f"Customer Records Loaded : {len(rows)}")
 
-        print("First Customer Record:")
+        if rows:
+            print("First Customer Record:")
+            print(json.dumps(rows[0], indent=2))
+        else:
+            print("No customer records found.")
 
-        print(json.dumps(rows[0], indent=2))
+        # ----------------------------------------------
+        # Store Processing Metadata
+        # ----------------------------------------------
 
-        total_records = message["total_records"]
-        invalid_rows = message["invalid_rows"]
+        table.put_item(
+            Item={
+                "file_id": object_key,
+                "bucket_name": bucket_name,
+                "total_records": total_records,
+                "status": "PROCESSING"
+            }
+        )
 
-        print(f"Bucket Name : {bucket_name}")
-        print(f"Object Key  : {object_key}")
-        print(f"Total Records : {total_records}")
-        print(f"Invalid Rows : {invalid_rows}")
+        print("Processing metadata stored in DynamoDB.")
 
     return {
         "statusCode": 200,
-        "body": json.dumps("Message processed successfully.")
+        "body": json.dumps({
+            "message": "Processing completed successfully."
+        })
     }
