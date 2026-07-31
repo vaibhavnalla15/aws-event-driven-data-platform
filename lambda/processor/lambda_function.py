@@ -24,12 +24,16 @@ def lambda_handler(event, context):
 
         content = response["Body"].read().decode("utf-8")
 
-        csv_reader = csv.reader(io.StringIO(content))
+        csv_reader = csv.DictReader(io.StringIO(content))
         rows = list(csv_reader)
 
         print("CSV downloaded successfully.")
-        print(f"Header: {rows[0]}")
-        print(f"Total Records: {len(rows) - 1}")
+        
+        print(f"Total Records: {len(rows)}")
+
+        print("First Customer Record:")
+
+        print(json.dumps(rows[0], indent=2))
 
         total_records = message["total_records"]
         invalid_rows = message["invalid_rows"]
