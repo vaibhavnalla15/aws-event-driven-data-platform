@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from decimal import Decimal
 import boto3
 import csv
 import io
@@ -113,6 +114,23 @@ def lambda_handler(event, context):
 
         print("Customer record processing completed.")
 
+        processing_end_time = datetime.now(timezone.utc).isoformat()
+
+        processing_duration_seconds = Decimal(
+            str(
+                (
+                    datetime.fromisoformat(processing_end_time) -
+                    datetime.fromisoformat(processing_start_time)
+                ).total_seconds()
+            )
+        )
+
+        processed_records = len(rows)
+
+        failed_records = 0
+
+        last_updated_at = processing_end_time
+
         # --------------------------------------------------
         # Update Processing Status
         # --------------------------------------------------
@@ -121,14 +139,29 @@ def lambda_handler(event, context):
             Key={
                 "file_id": object_key
             },
-            UpdateExpression="SET #status = :status",
+            UpdateExpression="""
+                SET
+                    #status = :status,
+                    processed_records = :processed_records,
+                    failed_records = :failed_records,
+                    processing_end_time = :processing_end_time,
+                    processing_duration_seconds = :processing_duration_seconds,
+                    last_updated_at = :last_updated_at
+            """,
             ExpressionAttributeNames={
                 "#status": "status"
             },
             ExpressionAttributeValues={
-                ":status": "COMPLETED"
+                ":status": "COMPLETED",
+                ":processed_records": processed_records,
+                ":failed_records": failed_records,
+                ":processing_end_time": processing_end_time,
+                ":processing_duration_seconds": processing_duration_seconds,
+                ":last_updated_at": last_updated_at
             }
         )
+
+        print("Processing metadata updated successfully.")
 
         print("Processing status updated to COMPLETED.")
 
