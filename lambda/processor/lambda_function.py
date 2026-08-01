@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import boto3
 import csv
 import io
@@ -68,6 +69,11 @@ def lambda_handler(event, context):
         else:
             print("No customer records found.")
 
+        processing_start_time = datetime.now(timezone.utc).isoformat()
+
+        created_at = processing_start_time
+        last_updated_at = processing_start_time    
+
         # --------------------------------------------------
         # Store Processing Metadata
         # --------------------------------------------------
@@ -76,8 +82,18 @@ def lambda_handler(event, context):
             Item={
                 "file_id": object_key,
                 "bucket_name": bucket_name,
+                "object_key": object_key,
+
                 "total_records": total_records,
-                "status": "PROCESSING"
+                "processed_records": 0,
+                "failed_records": 0,
+
+                "status": "PROCESSING",
+
+                "processing_start_time": processing_start_time,
+
+                "created_at": created_at,
+                "last_updated_at": last_updated_at
             }
         )
 
