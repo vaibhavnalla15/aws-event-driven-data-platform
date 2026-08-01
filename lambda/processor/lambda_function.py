@@ -11,7 +11,10 @@ import json
 
 s3 = boto3.client("s3")
 dynamodb = boto3.resource("dynamodb")
-table = dynamodb.Table("enterprise-processing-metadata")
+
+processing_table = dynamodb.Table("enterprise-processing-metadata")
+
+customer_table = dynamodb.Table("enterprise-customers")
 
 # ==========================================================
 # Retry Configuration
@@ -47,7 +50,7 @@ def lambda_handler(event, context):
         print(f"Total Records : {total_records}")
         print(f"Invalid Rows  : {invalid_rows}")
 
-        response = table.get_item(
+        response = processing_table.get_item(
             Key={
                 "file_id": object_key
             }
@@ -105,7 +108,7 @@ def lambda_handler(event, context):
         # Store Processing Metadata
         # --------------------------------------------------
 
-        table.put_item(
+        processing_table.put_item(
             Item={
                 "file_id": object_key,
                 "bucket_name": bucket_name,
@@ -154,6 +157,18 @@ def lambda_handler(event, context):
 
                     print(json.dumps(customer, indent=2))
 
+                    customer_table.put_item(
+                        Item={
+                            "customer_id": customer["Customer ID"],
+                            "company_name": customer["Company Name"],
+                            "email_primary": customer["Email Primary"],
+                            "industry": customer.get("Industry", ""),
+                            "country": customer.get("Country", "")
+                        }
+                    )
+
+                    print(f"Customer {customer['Customer ID']} stored successfully.")
+
                     processed_records += 1
 
                     success = True
@@ -171,7 +186,7 @@ def lambda_handler(event, context):
                 failed_records += 1
 
                 print(f"Customer {index} permanently failed.")
-                
+
         print("Customer record processing completed.")
 
         processing_end_time = datetime.now(timezone.utc).isoformat()
@@ -200,7 +215,7 @@ def lambda_handler(event, context):
         # Update Processing Status
         # --------------------------------------------------
 
-        table.update_item(
+        processing_table.update_item(
             Key={
                 "file_id": object_key
             },
