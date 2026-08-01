@@ -131,29 +131,47 @@ def lambda_handler(event, context):
         # --------------------------------------------------
 
         print("Starting customer record processing...")
+
         processed_records = 0
         failed_records = 0
 
         for index, customer in enumerate(rows, start=1):
 
-            try:
+            success = False
 
-                print(f"Processing Customer {index}")
+            for attempt in range(1, MAX_RETRIES + 1):
 
-                print(json.dumps(customer, indent=2))
+                try:
 
-                # Future business logic goes here
+                    print(
+                        f"Processing Customer {index} "
+                        f"(Attempt {attempt}/{MAX_RETRIES})"
+                    )
 
-                processed_records += 1
+                    # --------------------------------------------------
+                    # Future Business Logic
+                    # --------------------------------------------------
 
-            except Exception as e:
+                    print(json.dumps(customer, indent=2))
+
+                    processed_records += 1
+
+                    success = True
+
+                    break
+
+                except Exception as e:
+
+                    print(
+                        f"Attempt {attempt} failed: {str(e)}"
+                    )
+
+            if not success:
 
                 failed_records += 1
 
-                print(
-                    f"Customer {index} failed: {str(e)}"
-                )
-
+                print(f"Customer {index} permanently failed.")
+                
         print("Customer record processing completed.")
 
         processing_end_time = datetime.now(timezone.utc).isoformat()
