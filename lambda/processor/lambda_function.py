@@ -11,8 +11,13 @@ import json
 
 s3 = boto3.client("s3")
 dynamodb = boto3.resource("dynamodb")
-
 table = dynamodb.Table("enterprise-processing-metadata")
+
+# ==========================================================
+# Retry Configuration
+# ==========================================================
+
+MAX_RETRIES = 3
 
 
 def lambda_handler(event, context):
@@ -126,12 +131,28 @@ def lambda_handler(event, context):
         # --------------------------------------------------
 
         print("Starting customer record processing...")
+        processed_records = 0
+        failed_records = 0
 
         for index, customer in enumerate(rows, start=1):
 
-            print(f"Processing Customer {index}")
+            try:
 
-            print(json.dumps(customer, indent=2))
+                print(f"Processing Customer {index}")
+
+                print(json.dumps(customer, indent=2))
+
+                # Future business logic goes here
+
+                processed_records += 1
+
+            except Exception as e:
+
+                failed_records += 1
+
+                print(
+                    f"Customer {index} failed: {str(e)}"
+                )
 
         print("Customer record processing completed.")
 
@@ -151,6 +172,11 @@ def lambda_handler(event, context):
         failed_records = 0
 
         last_updated_at = processing_end_time
+
+        if failed_records == 0:
+            processing_status = "COMPLETED"
+        else:
+            processing_status = "COMPLETED_WITH_ERRORS"
 
         # --------------------------------------------------
         # Update Processing Status
@@ -173,7 +199,7 @@ def lambda_handler(event, context):
                 "#status": "status"
             },
             ExpressionAttributeValues={
-                ":status": "COMPLETED",
+                ":status": processing_status,
                 ":processed_records": processed_records,
                 ":failed_records": failed_records,
                 ":processing_end_time": processing_end_time,
