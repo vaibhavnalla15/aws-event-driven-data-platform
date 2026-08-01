@@ -10,6 +10,7 @@ import json
 # ==========================================================
 
 s3 = boto3.client("s3")
+sqs = boto3.client("sqs")
 dynamodb = boto3.resource("dynamodb")
 
 processing_table = dynamodb.Table("enterprise-processing-metadata")
@@ -22,6 +23,7 @@ customer_table = dynamodb.Table("enterprise-customers")
 
 MAX_RETRIES = 3
 
+DLQ_URL = "https://sqs.us-east-1.amazonaws.com/321869098112/enterprise-processing-dlq"
 
 def lambda_handler(event, context):
 
@@ -157,6 +159,9 @@ def lambda_handler(event, context):
 
                     print(json.dumps(customer, indent=2))
 
+                    if customer["Customer ID"] == "CUST-0005":
+                        raise Exception("Simulated customer processing failure")
+
                     customer_table.put_item(
                         Item={
                             "customer_id": customer["Customer ID"],
@@ -185,7 +190,24 @@ def lambda_handler(event, context):
 
                 failed_records += 1
 
-                print(f"Customer {index} permanently failed.")
+                dlq_message = {
+                    "file_id": object_key,
+                    "customer_number": index,
+                    "customer_id": customer.get("Customer ID"),
+                    "company_name": customer.get("Company Name"),
+                    "email_primary": customer.get("Email Primary"),
+                    "error": "Customer processing failed after maximum retry attempts.",
+                    "attempts": MAX_RETRIES
+                }
+
+                response = sqs.send_message(
+                    QueueUrl=DLQ_URL,
+                    MessageBody=json.dumps(dlq_message)
+                )
+
+                print(f"Customer {customer.get('Customer ID')} sent to DLQ.")
+
+                print(f"DLQ Message ID: {response['MessageId']}")
 
         print("Customer record processing completed.")
 
