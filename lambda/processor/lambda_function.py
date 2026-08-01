@@ -42,6 +42,27 @@ def lambda_handler(event, context):
         print(f"Total Records : {total_records}")
         print(f"Invalid Rows  : {invalid_rows}")
 
+        response = table.get_item(
+            Key={
+                "file_id": object_key
+            }
+        )
+
+        existing_item = response.get("Item")
+
+        if existing_item and existing_item.get("status") == "COMPLETED":
+
+            print("Duplicate processing request detected.")
+
+            print("File has already been processed.")
+
+            return {
+                "statusCode": 200,
+                "body": json.dumps({
+                    "message": "File already processed. Skipping."
+                })
+            }
+
         # --------------------------------------------------
         # Download CSV from S3
         # --------------------------------------------------
