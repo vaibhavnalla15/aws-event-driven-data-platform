@@ -31,3 +31,13 @@ module "sns" {
 
   common_tags = local.common_tags
 }
+
+# ====================
+# SQS
+# ====================
+
+module "sqs" {
+  source = "./modules/sqs"
+
+  common_tags = local.common_tags
+}

@@ -45,3 +45,31 @@ output "validation_topic_arn" {
 output "validation_topic_name" {
   value = module.sns.validation_topic_name
 }
+
+# ====================
+# SQS
+# ====================
+
+output "processing_queue_url" {
+  value = module.sqs.processing_queue_url
+}
+
+output "processing_queue_arn" {
+  value = module.sqs.processing_queue_arn
+}
+
+output "processing_queue_name" {
+  value = module.sqs.processing_queue_name
+}
+
+output "processing_dlq_url" {
+  value = module.sqs.processing_dlq_url
+}
+
+output "processing_dlq_arn" {
+  value = module.sqs.processing_dlq_arn
+}
+
+output "processing_dlq_name" {
+  value = module.sqs.processing_dlq_name
+}
