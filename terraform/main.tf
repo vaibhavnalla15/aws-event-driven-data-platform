@@ -51,3 +51,15 @@ module "dynamodb" {
 
   common_tags = local.common_tags
 }
+
+# ====================
+# Validation Lambda
+# ====================
+
+module "lambda_validator" {
+  source = "./modules/lambda-validator"
+
+  validation_lambda_role_arn = module.iam.validation_lambda_role_arn
+  bucket_id                  = module.s3.bucket_id
+  common_tags                = local.common_tags
+}

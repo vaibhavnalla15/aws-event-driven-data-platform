@@ -93,3 +93,15 @@ output "customers_table_name" {
 output "customers_table_arn" {
   value = module.dynamodb.customers_table_arn
 }
+
+# ====================
+# Validation Lambda
+# ====================
+
+output "validation_lambda_arn" {
+  value = module.lambda_validator.validation_lambda_arn
+}
+
+output "validation_lambda_name" {
+  value = module.lambda_validator.validation_lambda_name
+}
