@@ -83,3 +83,21 @@ module "lambda_processor" {
 
   common_tags = local.common_tags
 }
+
+# ====================
+# CloudWatch
+# ====================
+
+module "cloudwatch" {
+  source = "./modules/cloudwatch"
+
+  validation_lambda_name = module.lambda_validator.validation_lambda_name
+  processing_lambda_name = module.lambda_processor.processing_lambda_name
+
+  processing_queue_name = module.sqs.processing_queue_name
+  processing_dlq_name   = module.sqs.processing_dlq_name
+
+  validation_topic_arn = module.sns.validation_topic_arn
+
+  common_tags = local.common_tags
+}

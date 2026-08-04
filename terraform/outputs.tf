@@ -117,3 +117,11 @@ output "processing_lambda_arn" {
 output "processing_lambda_name" {
   value = module.lambda_processor.processing_lambda_name
 }
+
+# ====================
+# CloudWatch
+# ====================
+
+output "dashboard_name" {
+  value = module.cloudwatch.dashboard_name
+}
