@@ -63,3 +63,16 @@ module "lambda_validator" {
   bucket_id                  = module.s3.bucket_id
   common_tags                = local.common_tags
 }
+
+# ====================
+# Processing Lambda
+# ====================
+
+module "lambda_processor" {
+  source = "./modules/lambda-processor"
+
+  processing_lambda_role_arn = module.iam.processing_lambda_role_arn
+  processing_queue_arn       = module.sqs.processing_queue_arn
+
+  common_tags = local.common_tags
+}

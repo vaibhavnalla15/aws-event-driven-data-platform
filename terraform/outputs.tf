@@ -105,3 +105,15 @@ output "validation_lambda_arn" {
 output "validation_lambda_name" {
   value = module.lambda_validator.validation_lambda_name
 }
+
+# ====================
+# Processing Lambda
+# ====================
+
+output "processing_lambda_arn" {
+  value = module.lambda_processor.processing_lambda_arn
+}
+
+output "processing_lambda_name" {
+  value = module.lambda_processor.processing_lambda_name
+}
