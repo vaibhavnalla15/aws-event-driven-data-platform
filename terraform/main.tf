@@ -21,3 +21,13 @@ module "s3" {
   environment  = var.environment
   common_tags  = local.common_tags
 }
+
+# ====================
+# SNS
+# ====================
+
+module "sns" {
+  source = "./modules/sns"
+
+  common_tags = local.common_tags
+}

@@ -33,3 +33,15 @@ output "s3_bucket_arn" {
 output "s3_bucket_name" {
   value = module.s3.bucket_name
 }
+
+# ====================
+# SNS
+# ====================
+
+output "validation_topic_arn" {
+  value = module.sns.validation_topic_arn
+}
+
+output "validation_topic_name" {
+  value = module.sns.validation_topic_name
+}
