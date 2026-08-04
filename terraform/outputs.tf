@@ -73,3 +73,23 @@ output "processing_dlq_arn" {
 output "processing_dlq_name" {
   value = module.sqs.processing_dlq_name
 }
+
+# ====================
+# DynamoDB
+# ====================
+
+output "processing_metadata_table_name" {
+  value = module.dynamodb.processing_metadata_table_name
+}
+
+output "processing_metadata_table_arn" {
+  value = module.dynamodb.processing_metadata_table_arn
+}
+
+output "customers_table_name" {
+  value = module.dynamodb.customers_table_name
+}
+
+output "customers_table_arn" {
+  value = module.dynamodb.customers_table_arn
+}

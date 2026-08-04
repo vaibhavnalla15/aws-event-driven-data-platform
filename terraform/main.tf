@@ -41,3 +41,13 @@ module "sqs" {
 
   common_tags = local.common_tags
 }
+
+# ====================
+# DynamoDB
+# ====================
+
+module "dynamodb" {
+  source = "./modules/dynamodb"
+
+  common_tags = local.common_tags
+}
