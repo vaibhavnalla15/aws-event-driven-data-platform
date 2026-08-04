@@ -7,7 +7,14 @@ module "iam" {
 
   project_name = var.project_name
   environment  = var.environment
-  common_tags  = local.common_tags
+
+  bucket_arn                    = module.s3.bucket_arn
+  processing_queue_arn          = module.sqs.processing_queue_arn
+  validation_topic_arn          = module.sns.validation_topic_arn
+  processing_metadata_table_arn = module.dynamodb.processing_metadata_table_arn
+  customers_table_arn           = module.dynamodb.customers_table_arn
+
+  common_tags = local.common_tags
 }
 
 # ====================
