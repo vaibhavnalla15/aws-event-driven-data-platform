@@ -35,7 +35,7 @@ ENV/
 # Terraform
 # ==========================================================
 
-.terraform/
+**/.terraform/
 *.tfstate
 *.tfstate.*
 *.tfvars
@@ -48,7 +48,6 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
-.terraform.lock.hcl
 
 # Terraform Plans
 *.tfplan
