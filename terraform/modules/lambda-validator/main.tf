@@ -25,6 +25,13 @@ resource "aws_lambda_function" "tf_validation_lambda" {
   timeout     = 60
   memory_size = 256
 
+  environment {
+    variables = {
+      QUEUE_URL = var.processing_queue_url
+      TOPIC_ARN = var.validation_topic_arn
+    }
+  }
+
   tags = var.common_tags
 }
 
@@ -37,7 +44,7 @@ resource "aws_lambda_permission" "tf_allow_s3_invoke_validation_lambda" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.tf_validation_lambda.function_name
   principal     = "s3.amazonaws.com"
-  source_arn    = var.bucket_id
+  source_arn    = var.bucket_arn
 }
 
 # ====================

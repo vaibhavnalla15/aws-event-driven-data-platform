@@ -4,14 +4,15 @@ import json
 import boto3
 import csv
 import io
+import os
 
 # AWS Clients
 s3 = boto3.client("s3")
 sqs = boto3.client("sqs")
 sns = boto3.client("sns")
 
-QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/321869098112/enterprise-processing-queue"
-TOPIC_ARN = "arn:aws:sns:us-east-1:321869098112:enterprise-processing-notifications"
+QUEUE_URL = os.environ["QUEUE_URL"]
+TOPIC_ARN = os.environ["TOPIC_ARN"]
 # ==========================================================
 # Required Columns
 # ==========================================================
