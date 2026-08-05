@@ -4,7 +4,7 @@ from decimal import Decimal
 import csv
 import io
 import json
-
+import os
 import boto3
 
 # ==========================================================
@@ -20,11 +20,11 @@ dynamodb = boto3.resource("dynamodb")
 # ==========================================================
 
 processing_table = dynamodb.Table(
-    "enterprise-processing-metadata"
+    os.environ["PROCESSING_METADATA_TABLE"]
 )
 
 customer_table = dynamodb.Table(
-    "enterprise-customers"
+    os.environ["CUSTOMERS_TABLE"]
 )
 
 # ==========================================================
@@ -33,10 +33,7 @@ customer_table = dynamodb.Table(
 
 MAX_RETRIES = 3
 
-DLQ_URL = (
-    "https://sqs.us-east-1.amazonaws.com/"
-    "321869098112/enterprise-processing-dlq"
-)
+DLQ_URL = os.environ["DLQ_URL"]
 
 PROCESSED_PREFIX = "processed/"
 INCOMING_PREFIX = "incoming/"

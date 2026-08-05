@@ -25,6 +25,15 @@ resource "aws_lambda_function" "tf_processing_lambda" {
   timeout     = 60
   memory_size = 256
 
+  environment {
+    variables = {
+      DLQ_URL                   = var.processing_dlq_url
+      PROCESSING_METADATA_TABLE = var.processing_metadata_table_name
+      CUSTOMERS_TABLE           = var.customers_table_name
+      BUCKET_NAME               = var.bucket_name
+    }
+  }
+
   tags = var.common_tags
 }
 
