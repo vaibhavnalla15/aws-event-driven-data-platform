@@ -17,3 +17,8 @@ variable "bucket_name" {
   description = "S3 bucket name"
   type        = string
 }
+
+variable "notification_email" {
+  description = "Email address for SNS notifications"
+  type        = string
+}

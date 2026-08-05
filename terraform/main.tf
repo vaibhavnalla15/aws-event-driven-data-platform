@@ -36,6 +36,8 @@ module "s3" {
 module "sns" {
   source = "./modules/sns"
 
+  notification_email = var.notification_email
+
   common_tags = local.common_tags
 }
 
@@ -59,16 +61,18 @@ module "dynamodb" {
   common_tags = local.common_tags
 }
 
-# ====================
-# Validation Lambda
-# ====================
-
 module "lambda_validator" {
   source = "./modules/lambda-validator"
 
   validation_lambda_role_arn = module.iam.validation_lambda_role_arn
-  bucket_id                  = module.s3.bucket_id
-  common_tags                = local.common_tags
+
+  bucket_id  = module.s3.bucket_id
+  bucket_arn = module.s3.bucket_arn
+
+  processing_queue_url = module.sqs.processing_queue_url
+  validation_topic_arn = module.sns.validation_topic_arn
+
+  common_tags = local.common_tags
 }
 
 # ====================
@@ -80,6 +84,11 @@ module "lambda_processor" {
 
   processing_lambda_role_arn = module.iam.processing_lambda_role_arn
   processing_queue_arn       = module.sqs.processing_queue_arn
+  processing_dlq_url         = module.sqs.processing_dlq_url
+
+  processing_metadata_table_name = module.dynamodb.processing_metadata_table_name
+  customers_table_name           = module.dynamodb.customers_table_name
+  bucket_name                    = module.s3.bucket_id
 
   common_tags = local.common_tags
 }
