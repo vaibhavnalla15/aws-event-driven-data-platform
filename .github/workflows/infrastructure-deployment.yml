@@ -1,12 +1,126 @@
 name: Infrastructure Deployment
 
-on:
+'on':
   workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type APPLY to deploy the infrastructure
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: infrastructure-deployment
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: terraform
 
 jobs:
-  deployment:
+  deploy:
+    name: Deploy Terraform Infrastructure
+
     runs-on: ubuntu-latest
 
+    if: github.event.inputs.confirmation == 'APPLY'
+
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
+      ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
+      BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+      NOTIFICATION_EMAIL: ${{ secrets.NOTIFICATION_EMAIL }}
+
     steps:
-      - name: Placeholder
-        run: echo "Infrastructure deployment workflow will be implemented next."
+      # ==========================================================
+      # Checkout Repository
+      # ==========================================================
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # ==========================================================
+      # Setup Terraform
+      # ==========================================================
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.3
+
+      # ==========================================================
+      # Configure AWS Credentials
+      # ==========================================================
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # ==========================================================
+      # Generate terraform.tfvars
+      # ==========================================================
+
+      - name: Generate terraform.tfvars
+        run: |
+          cat > terraform.tfvars <<EOF
+          aws_region         = "${{ secrets.AWS_REGION }}"
+          project_name       = "${{ secrets.PROJECT_NAME }}"
+          environment        = "${{ secrets.ENVIRONMENT }}"
+          bucket_name        = "${{ secrets.BUCKET_NAME }}"
+          notification_email = "${{ secrets.NOTIFICATION_EMAIL }}"
+          EOF
+
+      # ==========================================================
+      # Terraform Init
+      # ==========================================================
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      # ==========================================================
+      # Terraform Validate
+      # ==========================================================
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      # ==========================================================
+      # Terraform Plan
+      # ==========================================================
+
+      - name: Terraform Plan
+        run: terraform plan -input=false -out=tfplan
+
+      # ==========================================================
+      # Upload Terraform Plan
+      # ==========================================================
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-${{ github.run_number }}
+          path: terraform/tfplan
+          retention-days: 7
+
+      # ==========================================================
+      # Terraform Apply
+      # ==========================================================
+
+      - name: Terraform Apply
+        run: terraform apply -input=false -auto-approve tfplan
+
+      # ==========================================================
+      # Deployment Complete
+      # ==========================================================
+
+      - name: Deployment Complete
+        run: |
+          echo "==============================================="
+          echo "Terraform Infrastructure Deployed Successfully"
+          echo "==============================================="
