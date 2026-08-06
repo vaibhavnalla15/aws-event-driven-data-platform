@@ -1,0 +1,12 @@
+name: Infrastructure Deployment
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Placeholder
+        run: echo "Infrastructure deployment workflow will be implemented next."
