@@ -42,7 +42,6 @@ jobs:
       NOTIFICATION_EMAIL: ${{ secrets.NOTIFICATION_EMAIL }}
 
     steps:
-
       # ==========================================================
       # Checkout Repository
       # ==========================================================
