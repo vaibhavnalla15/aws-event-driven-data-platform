@@ -1,0 +1,104 @@
+name: Infrastructure Validation
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+  pull_request:
+    branches:
+      - main
+      - dev
+
+permissions:
+  contents: read
+
+concurrency:
+  group: infrastructure-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: terraform
+
+jobs:
+  validate:
+    name: Validate Terraform Infrastructure
+
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
+      ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
+      BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+      NOTIFICATION_EMAIL: ${{ secrets.NOTIFICATION_EMAIL }}
+
+    steps:
+      # ----------------------------------------------------------
+      # Checkout Repository
+      # ----------------------------------------------------------
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # ----------------------------------------------------------
+      # Setup Terraform
+      # ----------------------------------------------------------
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # ----------------------------------------------------------
+      # Configure AWS Credentials
+      # ----------------------------------------------------------
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # ----------------------------------------------------------
+      # Generate terraform.tfvars
+      # ----------------------------------------------------------
+
+      - name: Generate terraform.tfvars
+        run: |
+          cat > terraform.tfvars <<EOF
+          aws_region         = "${{ secrets.AWS_REGION }}"
+          project_name       = "${{ secrets.PROJECT_NAME }}"
+          environment        = "${{ secrets.ENVIRONMENT }}"
+          bucket_name        = "${{ secrets.BUCKET_NAME }}"
+          notification_email = "${{ secrets.NOTIFICATION_EMAIL }}"
+          EOF
+
+      # ----------------------------------------------------------
+      # Terraform Format Check
+      # ----------------------------------------------------------
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      # ----------------------------------------------------------
+      # Terraform Init
+      # ----------------------------------------------------------
+
+      - name: Terraform Init
+        run: terraform init
+
+      # ----------------------------------------------------------
+      # Terraform Validate
+      # ----------------------------------------------------------
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      # ----------------------------------------------------------
+      # Terraform Plan
+      # ----------------------------------------------------------
+
+      - name: Terraform Plan
+        run: terraform plan -input=false
