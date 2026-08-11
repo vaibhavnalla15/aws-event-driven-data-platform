@@ -50,7 +50,7 @@ This project was built to demonstrate practical AWS Cloud Engineering, Infrastru
 > **High-Level AWS Architecture**
 
 <p align="center">
-  <img src="assets/architecture/enterprise-data-processing-platform-architecture.png.png" alt="Enterprise Data Processing & Reporting Platform Architecture" width="100%">
+  <img src="assets/architecture/enterprise-data-processing-platform-architecture.drawio.png" alt="Enterprise Data Processing & Reporting Platform Architecture" width="100%">
 </p>
 
 The following architecture illustrates the complete serverless data processing pipeline, including file ingestion, validation, asynchronous processing, metadata tracking, customer data storage, monitoring, Infrastructure as Code, and CI/CD automation.
